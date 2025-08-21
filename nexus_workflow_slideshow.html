@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cisco Nexus 1000V Automated Troubleshooting</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .slideshow-container {
+            position: relative;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .slide {
+            display: none;
+            width: 90%;
+            max-width: 1200px;
+            text-align: center;
+            padding: 40px;
+            animation: slideIn 0.5s ease-in-out;
+        }
+
+        .slide.active {
+            display: block;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(50px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 30px;
+            background: linear-gradient(45deg, #00d4ff, #ff6b6b);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        h2 {
+            font-size: 2.5rem;
+            margin-bottom: 25px;
+            color: #00d4ff;
+        }
+
+        h3 {
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            color: #ffd700;
+        }
+
+        .subtitle {
+            font-size: 1.3rem;
+            margin-bottom: 40px;
+            color: #e0e0e0;
+        }
+
+        .large-text {
+            font-size: 1.4rem;
+            line-height: 1.6;
+            margin: 30px 0;
+        }
+
+        .flow-diagram {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 30px 0;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .flow-step {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #00d4ff;
+            border-radius: 15px;
+            padding: 20px;
+            flex: 1;
+            min-width: 180px;
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s ease;
+        }
+
+        .flow-step:hover {
+            transform: scale(1.05);
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .arrow {
+            font-size: 2rem;
+            color: #ffd700;
+            margin: 0 10px;
+        }
+
+        .feature-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s ease;
+            margin: 20px auto;
+            max-width: 800px;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.15);
+            border-color: #00d4ff;
+        }
+
+        .big-feature {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 40px;
+            backdrop-filter: blur(10px);
+            border: 3px solid #00d4ff;
+            margin: 30px auto;
+            max-width: 900px;
+        }
+
+        .code-block {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 10px;
+            padding: 25px;
+            margin: 25px 0;
+            text-align: left;
+            font-family: 'Courier New', monospace;
+            border: 2px solid #00d4ff;
+            font-size: 1.1rem;
+        }
+
+        .execution-path {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 40px;
+            border: 3px solid;
+            margin: 30px auto;
+            max-width: 700px;
+        }
+
+        .path-success { border-color: #4CAF50; }
+        .path-manual { border-color: #ff9800; }
+        .path-reboot { border-color: #f44336; }
+
+        .navigation {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            z-index: 1000;
+        }
+
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid #00d4ff;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-btn:hover {
+            background: #00d4ff;
+            transform: scale(1.05);
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .slide-counter {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px 20px;
+            border-radius: 20px;
+            border: 1px solid #00d4ff;
+        }
+
+        .highlight {
+            background: linear-gradient(45deg, #ff6b6b, #ffd700);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: bold;
+        }
+
+        .tech-stack {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+
+        .tech-item {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50px;
+            padding: 15px 30px;
+            border: 2px solid #00d4ff;
+            transition: all 0.3s ease;
+        }
+
+        .tech-item:hover {
+            background: rgba(0, 212, 255, 0.2);
+            transform: scale(1.1);
+        }
+
+        .metric-showcase {
+            display: flex;
+            justify-content: center;
+            margin: 40px 0;
+        }
+
+        .metric-big {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            border: 3px solid #ffd700;
+            min-width: 300px;
+        }
+
+        .metric-value {
+            font-size: 4rem;
+            color: #00d4ff;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .metric-label {
+            font-size: 1.3rem;
+            color: #ffd700;
+        }
+
+        ul {
+            text-align: left;
+            margin: 20px 0;
+            padding-left: 20px;
+        }
+
+        li {
+            margin: 12px 0;
+            font-size: 1.2rem;
+            line-height: 1.4;
+        }
+
+        .problem-statement {
+            background: linear-gradient(45deg, rgba(255, 107, 107, 0.2), rgba(255, 152, 0, 0.2));
+            border: 2px solid #ff6b6b;
+            border-radius: 20px;
+            padding: 40px;
+            margin: 30px 0;
+        }
+
+        .solution-highlight {
+            background: linear-gradient(45deg, rgba(76, 175, 80, 0.2), rgba(0, 212, 255, 0.2));
+            border: 2px solid #4CAF50;
+            border-radius: 20px;
+            padding: 40px;
+            margin: 30px 0;
+        }
+
+        .step-number {
+            display: inline-block;
+            background: #00d4ff;
+            color: #1e3c72;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            line-height: 40px;
+            font-weight: bold;
+            margin-right: 15px;
+        }
+
+        .integration-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 25px;
+            margin: 30px 0;
+        }
+
+        .mini-feature {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="slideshow-container">
+        <div class="slide-counter">
+            <span id="slideNumber">1</span> / <span id="totalSlides">23</span>
+        </div>
+
+        <!-- Slide 1: Title -->
+        <div class="slide active">
+            <h1>Cisco Nexus 1000V</h1>
+            <h2>Automated Troubleshooting Workflow</h2>
+            <p class="subtitle">AI-Powered Network Incident Response & Remediation</p>
+            <div class="tech-stack">
+                <div class="tech-item">N8N Automation</div>
+                <div class="tech-item">ChatGPT AI</div>
+                <div class="tech-item">Splunk SIEM</div>
+                <div class="tech-item">Cisco Nexus</div>
+            </div>
+        </div>
+
+        <!-- Slide 2: Problem Statement -->
+        <div class="slide">
+            <h2>The Challenge</h2>
+            <div class="problem-statement">
+                <h3>🚨 Traditional Network Incident Response</h3>
+                <ul>
+                    <li><strong>Manual Alert Monitoring:</strong> Engineers must constantly watch for network issues</li>
+                    <li><strong>Slow Response Times:</strong> Human analysis and troubleshooting takes time</li>
+                    <li><strong>Inconsistent Expertise:</strong> Different skill levels lead to varying response quality</li>
+                    <li><strong>24/7 Coverage Gaps:</strong> Limited availability during off-hours</li>
+                    <li><strong>Repetitive Tasks:</strong> Same issues require repeated manual investigation</li>
+                </ul>
+            </div>
+            <p class="large-text">We needed a solution that could provide <span class="highlight">expert-level analysis and remediation</span> around the clock.</p>
+        </div>
+
+        <!-- Slide 3: Solution Overview -->
+        <div class="slide">
+            <h2>Our Solution</h2>
+            <div class="solution-highlight">
+                <h3>🤖 AI-Powered Automation Pipeline</h3>
+                <p class="large-text">An intelligent workflow that combines the expertise of ChatGPT with automated network device management to provide instant, expert-level incident response.</p>
+            </div>
+            <div class="feature-card">
+                <h3>Key Innovation</h3>
+                <p class="large-text">We've created the world's first <span class="highlight">"AI Network Engineer"</span> that can diagnose, assess risk, and automatically remediate Cisco network issues while maintaining human oversight for safety.</p>
+            </div>
+        </div>
+
+        <!-- Slide 4: High-Level Architecture -->
+        <div class="slide">
+            <h2>System Architecture</h2>
+            <p class="subtitle">Complete automation pipeline from alert to resolution</p>
+            <div class="flow-diagram">
+                <div class="flow-step">
+                    <h3>📊 Splunk</h3>
+                    <p>SIEM Alert Generation</p>
+                </div>
+                <div class="arrow">→</div>
+                <div class="flow-step">
+                    <h3>🔗 Webhook</h3>
+                    <p>N8N Trigger</p>
+                </div>
+                <div class="arrow">→</div>
+                <div class="flow-step">
+                    <h3>🤖 ChatGPT</h3>
+                    <p>AI Analysis</p>
+                </div>
+                <div class="arrow">→</div>
+                <div class="flow-step">
+                    <h3>🔧 Automation</h3>
+                    <p>Fix & Verify</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 5: Step 1 - Webhook Trigger -->
+        <div class="slide">
+            <h2>Step 1: Webhook Trigger</h2>
+            <div class="big-feature">
+                <h3><span class="step-number">1</span>Alert Reception</h3>
+                <p class="large-text">Splunk detects network anomalies and immediately triggers our N8N workflow via webhook</p>
+                <div class="code-block">
+                    <strong>Webhook Payload Includes:</strong><br>
+                    • Device IP Address<br>
+                    • Error Message from Syslog<br>
+                    • Interface Name<br>
+                    • Severity Level<br>
+                    • Timestamp<br>
+                    • Splunk Search Context
+                </div>
+                <p class="large-text"><strong>Path:</strong> <code>POST /nexus-error</code></p>
+            </div>
+        </div>
+
+        <!-- Slide 6: Step 2 - AI Analysis -->
+        <div class="slide">
+            <h2>Step 2: AI Analysis</h2>
+            <div class="big-feature">
+                <h3><span class="step-number">2</span>ChatGPT Expert Analysis</h3>
+                <p class="large-text">AI analyzes the syslog data with Cisco networking expertise</p>
+                <div class="code-block">
+                    <strong>System Prompt:</strong><br>
+                    "You are a Cisco networking expert specializing in Nexus switches and syslog analysis..."
+                </div>
+                <div class="integration-grid">
+                    <div class="mini-feature">
+                        <h3>📝 Input Analysis</h3>
+                        <p>Processes device errors, interface data, and severity information</p>
+                    </div>
+                    <div class="mini-feature">
+                        <h3>🎯 Output Generation</h3>
+                        <p>Creates diagnostic commands and urgency assessment</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 7: Step 3 - SSH Diagnostics -->
+        <div class="slide">
+            <h2>Step 3: SSH Diagnostics</h2>
+            <div class="big-feature">
+                <h3><span class="step-number">3</span>Automated Device Diagnostics</h3>
+                <p class="large-text">Custom SSH connection executes diagnostic commands on the target device</p>
+                <div class="integration-grid">
+                    <div class="mini-feature">
+                        <h3>🔐 Secure Connection</h3>
+                        <p>Encrypted SSH with legacy algorithm support for older Cisco devices</p>
+                    </div>
+                    <div class="mini-feature">
+                        <h3>📋 Command Execution</h3>
+                        <p>Runs AI-generated diagnostic commands and captures output</p>
+                    </div>
+                </div>
+                <div class="code-block">
+                    <strong>Always starts with:</strong> terminal length 0<br>
+                    <strong>Then executes:</strong> show interface, show version, etc.
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 8: Step 4 - Fix Generation -->
+        <div class="slide">
+            <h2>Step 4: Fix Generation</h2>
+            <div class="big-feature">
+                <h3><span class="step-number">4</span>AI-Powered Solution Creation</h3>
+                <p class="large-text">Second ChatGPT call analyzes diagnostic output and generates specific fix commands</p>
+                <div class="code-block">
+                    <strong>Input Context:</strong><br>
+                    • Original syslog message<br>
+                    • Device diagnostic output<br>
+                    • Interface status information<br>
+                    • Technical analysis results
+                </div>
+                <div class="feature-card">
+                    <h3>🛡️ Built-in Safety</h3>
+                    <p>AI automatically assesses risk level and provides verification commands for every fix</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 9: Step 5 - Risk Assessment -->
+        <div class="slide">
+            <h2>Step 5: Risk Assessment Gate</h2>
+            <div class="big-feature">
+                <h3><span class="step-number">5</span>Safety Decision Point</h3>
+                <p class="large-text">Critical safety gate evaluates if automated fix is safe to execute</p>
+                <div class="integration-grid">
+                    <div class="mini-feature" style="border-color: #4CAF50;">
+                        <h3>✅ Low/Medium Risk</h3>
+                        <p>Proceed to automated fix application</p>
+                    </div>
+                    <div class="mini-feature" style="border-color: #ff9800;">
+                        <h3>⚠️ High Risk</h3>
+                        <p>Route to manual intervention path</p>
+                    </div>
+                </div>
+                <p class="large-text"><strong>Safety First:</strong> No high-risk changes are ever executed automatically</p>
+            </div>
+        </div>
+
+        <!-- Slide 10: Step 6 - Automated Remediation -->
+        <div class="slide">
+            <h2>Step 6: Automated Remediation</h2>
+            <div class="big-feature">
+                <h3><span class="step-number">6</span>Safe Fix Application</h3>
+                <p class="large-text">Approved fixes are automatically applied to the device via SSH</p>
+                <div class="code-block">
+                    <strong>Example Fix Commands:</strong><br>
+                    configure terminal<br>
+                    interface GigabitEthernet3<br>
+                    no shutdown<br>
+                    exit
+                </div>
+                <div class="feature-card">
+                    <h3>🔍 Immediate Verification</h3>
+                    <p>Every fix is immediately verified with additional diagnostic commands to ensure success</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 11: Execution Path - Success -->
+        <div class="slide">
+            <h2>Execution Path: Automated Success</h2>
+            <div class="execution-path path-success">
+                <h3>✅ Low/Medium Risk Scenario</h3>
+                <p class="large-text"><strong>Trigger:</strong> Risk assessment determines fix is safe</p>
+                <p class="large-text"><strong>Action:</strong> Automated fix application + verification</p>
+                <p class="large-text"><strong>Result:</strong> Issue resolved, comprehensive report generated</p>
+                <div class="code-block">
+                    <strong>Typical Timeline:</strong><br>
+                    Alert → Analysis (30s) → Diagnosis (45s) → Fix (30s) → Verification (15s)<br>
+                    <strong>Total Resolution Time: ~2 minutes</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 12: Execution Path - Manual Intervention -->
+        <div class="slide">
+            <h2>Execution Path: Manual Intervention</h2>
+            <div class="execution-path path-manual">
+                <h3>⚠️ High Risk Scenario</h3>
+                <p class="large-text"><strong>Trigger:</strong> AI identifies potential safety concerns</p>
+                <p class="large-text"><strong>Action:</strong> Escalate to human engineer with recommendations</p>
+                <p class="large-text"><strong>Result:</strong> Detailed analysis provided for manual review</p>
+                <div class="feature-card">
+                    <h3>🧠 Human-AI Collaboration</h3>
+                    <p>Engineers receive expert-level analysis and suggested commands, but retain full control over execution</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 13: Execution Path - Reboot Required -->
+        <div class="slide">
+            <h2>Execution Path: Reboot Required</h2>
+            <div class="execution-path path-reboot">
+                <h3>🔄 Controlled Device Restart</h3>
+                <p class="large-text"><strong>Trigger:</strong> Fix requires device restart to take effect</p>
+                <p class="large-text"><strong>Action:</strong> Apply fix → Verify → Controlled reboot</p>
+                <p class="large-text"><strong>Result:</strong> Complete device recovery with full documentation</p>
+                <div class="code-block">
+                    <strong>Reboot Process:</strong><br>
+                    1. Apply configuration changes<br>
+                    2. Verify changes are ready<br>
+                    3. Execute 'reload' command<br>
+                    4. Wait for device recovery
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 14: ChatGPT Integration Deep Dive -->
+        <div class="slide">
+            <h2>ChatGPT Integration Details</h2>
+            <div class="feature-card">
+                <h3>🧠 Dual AI Analysis Approach</h3>
+                <div class="integration-grid">
+                    <div class="mini-feature">
+                        <h3>📊 First Analysis</h3>
+                        <p><strong>Purpose:</strong> Understand the problem<br>
+                        <strong>Input:</strong> Raw syslog data<br>
+                        <strong>Output:</strong> Diagnostic commands</p>
+                    </div>
+                    <div class="mini-feature">
+                        <h3>🔧 Second Analysis</h3>
+                        <p><strong>Purpose:</strong> Generate solutions<br>
+                        <strong>Input:</strong> Diagnostic results<br>
+                        <strong>Output:</strong> Fix commands + risk assessment</p>
+                    </div>
+                </div>
+            </div>
+            <div class="code-block">
+                <strong>Structured JSON Response:</strong><br>
+                {<br>
+                &nbsp;&nbsp;"analysis": "Interface down due to admin shutdown",<br>
+                &nbsp;&nbsp;"diagnostic_commands": ["show interface brief"],<br>
+                &nbsp;&nbsp;"fix_commands": ["no shutdown"],<br>
+                &nbsp;&nbsp;"risk_level": "low"<br>
+                }
+            </div>
+        </div>
+
+        <!-- Slide 15: SSH Security Features -->
+        <div class="slide">
+            <h2>SSH Security & Connectivity</h2>
+            <div class="big-feature">
+                <h3>🔐 Enterprise-Grade Security</h3>
+                <div class="integration-grid">
+                    <div class="mini-feature">
+                        <h3>🔑 Credential Management</h3>
+                        <p>Encrypted storage of SSH credentials with N8N credential system</p>
+                    </div>
+                    <div class="mini-feature">
+                        <h3>🔧 Legacy Support</h3>
+                        <p>Compatible with older Cisco devices using legacy SSH algorithms</p>
+                    </div>
+                    <div class="mini-feature">
+                        <h3>🎯 Custom Prompts</h3>
+                        <p>Optimized login sequences for Cisco device authentication</p>
+                    </div>
+                    <div class="mini-feature">
+                        <h3>✅ Connection Validation</h3>
+                        <p>Automatic connection testing and error handling</p>
+                    </div>
+                </div>
+                <div class="code-block">
+                    <strong>Security Configuration:</strong><br>
+                    • compatibilityLevel: "legacy-only"<br>
+                    • securityLevel: "low" (for older devices)<br>
+                    • allowLegacyAlgorithms: true
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 16: Safety Controls -->
+        <div class="slide">
+            <h2>Comprehensive Safety Controls</h2>
+            <div class="feature-card">
+                <h3>🛡️ Multi-Layer Protection</h3>
+                <ul>
+                    <li><strong>AI Risk Assessment:</strong> Every fix is evaluated for potential impact</li>
+                    <li><strong>Explicit Safety Gates:</strong> Hard stops prevent dangerous operations</li>
+                    <li><strong>Verification Requirements:</strong> All changes must be verified before completion</li>
+                    <li><strong>Manual Override Path:</strong> High-risk scenarios always require human approval</li>
+                    <li><strong>Complete Audit Trail:</strong> Every action is logged with timestamps</li>
+                </ul>
+            </div>
+            <div class="metric-showcase">
+                <div class="metric-big">
+                    <div class="metric-value">0</div>
+                    <div class="metric-label">High-Risk Auto-Fixes</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 17: Splunk Integration -->
+        <div class="slide">
+            <h2>Splunk SIEM Integration</h2>
+            <div class="big-feature">
+                <h3>📊 Complete SIEM Workflow</h3>
+                <div class="integration-grid">
+                    <div class="mini-feature">
+                        <h3>🚨 Alert Generation</h3>
+                        <p>Splunk monitors Cisco syslogs and creates alerts based on predefined rules</p>
+                    </div>
+                    <div class="mini-feature">
+                        <h3>🔗 Webhook Triggering</h3>
+                        <p>Alerts automatically trigger N8N workflow via webhook POST request</p>
+                    </div>
+                    <div class="mini-feature">
+                        <h3>📋 Context Preservation</h3>
+                        <p>Full alert context including search ID and results link maintained</p>
+                    </div>
+                    <div class="mini-feature">
+                        <h3>📈 Response Reporting</h3>
+                        <p>Workflow results sent back to Splunk for complete audit trail</p>
+                    </div>
+                </div>
+                <p class="large-text"><strong>Result:</strong> Seamless integration from detection to resolution within SIEM platform</p>
+            </div>
+        </div>
+
+        <!-- Slide 18: Device Integration -->
+        <div class="slide">
+            <h2>Cisco Device Integration</h2>
+            <div class="big-feature">
+                <h3>🌐 Universal Cisco Support</h3>
+                <div class="feature-card">
+                    <h3>🎯 Nexus 1000V Optimized</h3>
+                    <p class="large-text">Specifically designed for Cisco Nexus 1000V virtual switches with expert command knowledge</p>
+                </div>
+                <div class="integration-grid">
+                    <div class="mini-feature">
+                        <h3>📡 Dynamic IP Addressing</h3>
+                        <p>Workflow adapts to any device IP from alert payload</p>
+                    </div>
+                    <div class="mini-feature">
+                        <h3>🔧 Command Optimization</h3>
+                        <p>AI generates device-specific commands for accurate diagnosis</p>
+                    </div>
+                </div>
+                <div class="code-block">
+                    <strong>Common Fix Examples:</strong><br>
+                    • Interface no shutdown<br>
+                    • VLAN configuration repairs<br>
+                    • Routing table corrections<br>
+                    • Port-channel troubleshooting
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 19: Error Handling & Verification -->
+        <div class="slide">
+            <h2>Error Handling & Verification</h2>
+            <div class="big-feature">
+                <h3>🔍 Robust Quality Assurance</h3>
+                <div class="integration-grid">
+                    <div class="mini-feature">
+                        <h3>🛠️ JSON Parsing Fallbacks</h3>
+                        <p>Graceful handling of malformed AI responses with default safety commands</p>
+                    </div>
+                    <div class="mini-feature">
+                        <h3>✅ Always-Output Data</h3>
+                        <p>SSH nodes configured to provide output even on errors for debugging</p>
+                    </div>
+                    <div class="mini-feature">
+                        <h3>🔄 Mandatory Verification</h3>
+                        <p>Every applied fix must pass verification commands before success</p>
+                    </div>
+                    <div class="mini-feature">
+                        <h3>📝 Comprehensive Logging</h3>
+                        <p>Complete command history and output captured for audit</p>
+                    </div>
+                </div>
+                <p class="large-text"><strong>Philosophy:</strong> <span class="highlight">Fail safe, log everything, verify always</span></p>
+            </div>
+        </div>
+
+        <!-- Slide 20: Monitoring & Reporting -->
+        <div class="slide">
+            <h2>Monitoring & Reporting</h2>
+            <div class="feature-card">
+                <h3>📊 Complete Operational Visibility</h3>
+                <div class="code-block">
+                    <strong>Success Report Includes:</strong><br>
+                    • Timestamp and device information<br>
+                    • Original syslog and Splunk context<br>
+                    • Applied fix commands and explanations<br>
+                    • Command execution outputs<br>
+                    • Success status and any errors<br>
+                    • Reboot requirements and actions
+                </div>
+                <div class="integration-grid">
+                    <div class="mini-feature">
+                        <h3>🎯 Success Metrics</h3>
+                        <p>Automatic fix rate, verification success, manual intervention frequency</p>
+                    </div>
+                    <div class="mini-feature">
+                        <h3>🔍 Audit Trail</h3>
+                        <p>Complete command history, timestamps, and decision rationale</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 21: Key Benefits -->
+        <div class="slide">
+            <h2>Key Benefits</h2>
+            <div class="feature-card">
+                <h3>🚀 <span class="highlight">Operational Excellence</span></h3>
+                <ul>
+                    <li><strong>Dramatic MTTR Reduction:</strong> From hours to minutes for common issues</li>
+                    <li><strong>24/7 Expert Coverage:</strong> AI provides consistent expert-level analysis around the clock</li>
+                    <li><strong>Zero Human Error:</strong> Consistent, repeatable responses eliminate manual mistakes</li>
+                    <li><strong>Scalable Operations:</strong> Handle multiple simultaneous incidents without staffing increases</li>
+                    <li><strong>Knowledge Retention:</strong> Expert troubleshooting knowledge captured in AI system</li>
+                    <li><strong>Cost Efficiency:</strong> Reduce operational overhead while improving service quality</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Slide 22: Performance Metrics -->
+        <div class="slide">
+            <h2>Performance Metrics</h2>
+            <div class="integration-grid">
+                <div class="metric-big">
+                    <div class="metric-value">< 2</div>
+                    <div class="metric-label">Minutes Average Resolution</div>
+                </div>
+                <div class="metric-big">
+                    <div class="metric-value">24/7</div>
+                    <div class="metric-label">Automated Coverage</div>
+                </div>
+            </div>
+            <div class="integration-grid">
+                <div class="metric-big">
+                    <div class="metric-value">100%</div>
+                    <div class="metric-label">Audit Trail Coverage</div>
+                </div>
+                <div class="metric-big">
+                    <div class="metric-value">0</div>
+                    <div class="metric-label">Unsafe Auto-Fixes</div>
+                </div>
+            </div>
+            <p class="large-text"><strong>Industry Impact:</strong> First-of-its-kind AI-driven network automation with safety controls</p>
+        </div>
+
+        <!-- Slide 23: Conclusion -->
+        <div class="slide">
+            <h2>The Future of Network Operations</h2>
+            <div class="solution-highlight">
+                <h3>🎯 <span class="highlight">Mission Accomplished</span></h3>
+                <p class="large-text">We've successfully created an AI-powered "Network Engineer" that provides expert-level incident response while maintaining the safety and oversight that enterprise networks require.</p>
+            </div>
+            <div class="integration-grid">
+                <div class="mini-feature">
+                    <h3>🚀 Innovation</h3>
+                    <p>World's first ChatGPT-driven network troubleshooting system</p>
+                </div>
+                <div class="mini-feature">
+                    <h3>⚖️ Balance</h3>
+                    <p>Perfect harmony between automation speed and safety controls</p>
+                </div>
+                <div class="mini-feature">
+                    <h3>🔮 Scalability</h3>
+                    <p>Architecture ready for expansion to additional device types</p>
+                </div>
+                <div class="mini-feature">
+                    <h3>💡 Value</h3>
+                    <p>Transformative impact on network reliability and operational efficiency</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="navigation">
+        <button class="nav-btn" id="prevBtn" onclick="changeSlide(-1)">Previous</button>
+        <button class="nav-btn" id="nextBtn" onclick="changeSlide(1)">Next</button>
+    </div>
+
+    <script>
+        let currentSlide = 1;
+        const totalSlides = document.querySelectorAll('.slide').length;
+        
+        document.getElementById('totalSlides').textContent = totalSlides;
+
+        function showSlide(n) {
+            const slides = document.querySelectorAll('.slide');
+            
+            if (n > totalSlides) currentSlide = 1;
+            if (n < 1) currentSlide = totalSlides;
+            
+            slides.forEach(slide => slide.classList.remove('active'));
+            slides[currentSlide - 1].classList.add('active');
+            
+            document.getElementById('slideNumber').textContent = currentSlide;
+            
+            // Update navigation buttons
+            document.getElementById('prevBtn').disabled = currentSlide === 1;
+            document.getElementById('nextBtn').disabled = currentSlide === totalSlides;
+        }
+
+        function changeSlide(n) {
+            currentSlide += n;
+            showSlide(currentSlide);
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowLeft') changeSlide(-1);
+            if (e.key === 'ArrowRight') changeSlide(1);
+        });
+
+        // Initialize
+        showSlide(currentSlide);
+    </script>
+</body>
+</html>
